@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>My Public File Uploader</title>
+<style>
+ body{font-family:sans-serif;max-width:480px;margin:2rem auto;text-align:center;}
+ #bar{width:100%;height:8px;background:#ddd;margin-top:8px;display:none}
+ #bar>div{height:100%;width:0;background:#4caf50}
+ pre{white-space:pre-wrap;text-align:left}
+</style>
+</head>
+<body>
+  <h2>Upload a file</h2>
+  <input type="file" id="pick"><br><br>
+  <button id="btn">Upload</button>
+  <div id="bar"><div></div></div>
+  <pre id="log"></pre>
+
+<script>
+const TOKEN = "G6zOnPcffHBTfXEzJ97l87LbWbRYlqj9";   // ← keep quotes; "" means anonymous
+
+const pick = document.getElementById('pick');
+const log  = (...m)=>{logbox.textContent+=m.join(' ')+'\n';};
+const bar  = document.getElementById('bar');
+const fill = bar.firstElementChild;
+const logbox = document.getElementById('log');
+
+document.getElementById('btn').onclick = async () => {
+  const file = pick.files[0];
+  if(!file){alert('Choose a file first');return;}
+
+  bar.style.display='block'; fill.style.width='0%'; logbox.textContent='';
+  log('Uploading …');
+
+  // Build multipart form
+  const fd = new FormData();
+  fd.append('file', file);
+  if(TOKEN) fd.append('token', TOKEN);
+
+  // Use XMLHttpRequest so we can show progress
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST','https://api.gofile.io/uploadFile');
+  xhr.upload.onprogress = e=>{
+    if(e.lengthComputable){
+      const pct = (e.loaded/e.total*100)|0;
+      fill.style.width = pct+'%';
+    }
+  };
+  xhr.onreadystatechange = ()=>{
+    if(xhr.readyState===4){
+      try{
+        const js = JSON.parse(xhr.responseText);
+        if(js.status!=='ok') throw js;
+        const link = js.data.downloadPage;
+        fill.style.width='100%';
+        log('Done! Public link:'); log(link);
+      }catch(err){
+        console.error(err); alert('Upload failed');
+        bar.style.display='none';
+      }
+    }
+  };
+  xhr.send(fd);
+};
+</script>
+</body>
+</html>
