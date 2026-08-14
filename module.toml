@@ -1,0 +1,15 @@
+[module]
+name = "TurboDNS Changer"
+package = "com.turbodns.changer"
+type = "application"
+version_code = 1
+version_name = "1.0.0"
+
+[build]
+compile_sdk = 35
+min_sdk = 26
+target_sdk = 35
+java_version = "1.8"
+
+[dependencies]
+# Standard Android platform dependencies for non-Gradle IDEs
