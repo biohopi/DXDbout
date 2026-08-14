@@ -10,7 +10,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,13 +32,15 @@ public class MainActivity extends Activity {
 
     private static final int REQUEST_VPN_PERMISSION = 101;
 
+    private TabHost tabHost;
     private Spinner spinnerMode;
     private Spinner spinnerPresets;
-    private Button btnNewPreset;
-    private Button btnEditPreset;
     private Button btnToggle;
     private TextView tvStatus;
     private TextView tvStats;
+
+    private Button btnNewPreset;
+    private ListView lvPresets;
 
     private PresetStorage storage;
     private List<DnsPreset> presetList = new ArrayList<>();
@@ -61,13 +65,16 @@ public class MainActivity extends Activity {
 
         storage = new PresetStorage(this);
 
+        setupTabs();
+
         spinnerMode = findViewById(R.id.spinnerMode);
         spinnerPresets = findViewById(R.id.spinnerPresets);
-        btnNewPreset = findViewById(R.id.btnNewPreset);
-        btnEditPreset = findViewById(R.id.btnEditPreset);
         btnToggle = findViewById(R.id.btnToggle);
         tvStatus = findViewById(R.id.tvStatus);
         tvStats = findViewById(R.id.tvStats);
+
+        btnNewPreset = findViewById(R.id.btnNewPreset);
+        lvPresets = findViewById(R.id.lvPresets);
 
         setupModeSpinner();
 
@@ -79,16 +86,15 @@ public class MainActivity extends Activity {
             }
         });
 
-        btnEditPreset.setOnClickListener(new View.OnClickListener() {
+        lvPresets.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onClick(View v) {
-                if (selectedPreset == null) {
-                    Toast.makeText(MainActivity.this, "No preset selected to edit", Toast.LENGTH_SHORT).show();
-                    return;
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (position < presetList.size()) {
+                    DnsPreset presetToEdit = presetList.get(position);
+                    Intent intent = new Intent(MainActivity.this, PresetEditorActivity.class);
+                    intent.putExtra(PresetEditorActivity.EXTRA_PRESET_ID, presetToEdit.getId());
+                    startActivity(intent);
                 }
-                Intent intent = new Intent(MainActivity.this, PresetEditorActivity.class);
-                intent.putExtra(PresetEditorActivity.EXTRA_PRESET_ID, selectedPreset.getId());
-                startActivity(intent);
             }
         });
 
@@ -98,6 +104,21 @@ public class MainActivity extends Activity {
                 toggleService();
             }
         });
+    }
+
+    private void setupTabs() {
+        tabHost = findViewById(R.id.tabHost);
+        tabHost.setup();
+
+        TabHost.TabSpec spec1 = tabHost.newTabSpec("TabDashboard");
+        spec1.setContent(R.id.tabDashboard);
+        spec1.setIndicator("Dashboard");
+        tabHost.addTab(spec1);
+
+        TabHost.TabSpec spec2 = tabHost.newTabSpec("TabPresets");
+        spec2.setContent(R.id.tabPresets);
+        spec2.setIndicator("Presets");
+        tabHost.addTab(spec2);
     }
 
     @Override
@@ -138,6 +159,7 @@ public class MainActivity extends Activity {
     private void refreshPresets() {
         presetList = storage.getAllPresets();
         setupPresetSpinner();
+        setupPresetsListView();
     }
 
     private void setupPresetSpinner() {
@@ -154,7 +176,7 @@ public class MainActivity extends Activity {
         }
 
         if (presetList.isEmpty()) {
-            names.add("No custom presets (Tap '+ New Preset')");
+            names.add("No custom presets (Go to Presets tab)");
             selectedPreset = null;
         } else {
             selectedPreset = presetList.get(Math.min(selectedIndex, presetList.size() - 1));
@@ -182,9 +204,19 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void setupPresetsListView() {
+        List<String> presetDisplayList = new ArrayList<>();
+        for (DnsPreset p : presetList) {
+            presetDisplayList.add(p.getName() + "\n" + p.getDnsServers().size() + " DNS servers (Tap to edit)");
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, presetDisplayList);
+        lvPresets.setAdapter(adapter);
+    }
+
     private void toggleService() {
         if (selectedPreset == null || selectedPreset.getDnsServers().isEmpty()) {
-            Toast.makeText(this, "Please create and select a custom preset first", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please create a custom preset in the Presets tab first", Toast.LENGTH_SHORT).show();
             return;
         }
 
