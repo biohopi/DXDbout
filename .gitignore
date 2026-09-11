@@ -7,5 +7,4 @@ app/.cxx/
 app/src/main/cpp/llama.cpp/
 *.iml
 .DS_Store
-*.apk
 *.aar
