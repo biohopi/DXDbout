@@ -1,0 +1,10 @@
+.gradle/
+.idea/
+build/
+app/build/
+.cxx/
+app/.cxx/
+app/src/main/cpp/llama.cpp/
+*.iml
+.DS_Store
+*.aar
